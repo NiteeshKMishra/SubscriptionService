@@ -14,4 +14,5 @@ type App struct {
 	InfoLog  *log.Logger
 	ErrorLog *log.Logger
 	WG       *sync.WaitGroup
+	MU       *sync.Mutex
 }

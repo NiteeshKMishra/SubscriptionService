@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	_ "github.com/jackc/pgconn"
@@ -11,8 +12,10 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
-func InitDB() *sql.DB {
-	conn := connectDB()
+const MaxConnections = 10
+
+func InitDB(mu *sync.Mutex) *sql.DB {
+	conn := connectDB(mu)
 	if conn == nil {
 		panic("cannot connect to DB")
 	}
@@ -20,17 +23,22 @@ func InitDB() *sql.DB {
 	return conn
 }
 
-func connectDB() *sql.DB {
+func connectDB(mu *sync.Mutex) *sql.DB {
 	counts := 0
 
 	dsn := os.Getenv("DSN")
 
+	mu.Lock()
+	defer func() {
+		mu.Unlock()
+	}()
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {
 			log.Println("Reconnecting again to db...")
 			counts++
 		} else {
+			connection.SetMaxOpenConns(MaxConnections)
 			return connection
 		}
 
