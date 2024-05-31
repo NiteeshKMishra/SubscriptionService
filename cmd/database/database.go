@@ -28,10 +28,9 @@ func connectDB() *sql.DB {
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {
-			log.Panicln("Reconnecting again to db...")
+			log.Println("Reconnecting again to db...")
 			counts++
 		} else {
-			log.Panicln("Reconnecting again to db...")
 			return connection
 		}
 

@@ -1,11 +1,11 @@
-BINARY_NAME=myapp
-DSN="host=localhost port=5432 user=postgres password=password dbname=concurrency sslmode=disable timezone=UTC connect_timeout=5"
+BINARY_NAME=subscriptionservice
+DSN="host=localhost port=5432 user=postgres password=password dbname=subscriptionservice sslmode=disable timezone=UTC connect_timeout=5"
 REDIS="127.0.0.1:6379"
 
 ## build: Build binary
 build:
 	@echo "Building..."
-	env CGO_ENABLED=0  go build -ldflags="-s -w" -o ${BINARY_NAME} ./cmd/web
+	env CGO_ENABLED=0  go build -ldflags="-s -w" -o ${BINARY_NAME} ./cmd
 	@echo "Built!"
 
 ## run: builds and runs the application

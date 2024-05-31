@@ -8,6 +8,9 @@
 *.so
 *.dylib
 
+# Build
+subscriptionservice
+
 # Docker
 db-data
 
