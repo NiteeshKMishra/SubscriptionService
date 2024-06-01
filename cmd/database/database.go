@@ -134,7 +134,7 @@ func populateDB(db *sql.DB) error {
 
 	//Populate Admin user
 	adminEmail := os.Getenv("ADMIN_EMAIL")
-	adminPass := os.Getenv("ADMIN_PASS")
+	adminPass := os.Getenv("ADMIN_PASSWORD")
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(adminPass), 12)
 	if err != nil {
 		return err

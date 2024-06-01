@@ -16,9 +16,7 @@ func InitRoutes(app *app.App) http.Handler {
 	mux := chi.NewRouter()
 	//Middlewares
 	mux.Use(middleware.Recoverer)
-	mux.Use(func(h http.Handler) http.Handler {
-		return app.Session.LoadAndSave(h)
-	})
+	mux.Use(app.Session.LoadAndSave)
 
 	//Routes
 	mux.Get("/health", func(w http.ResponseWriter, r *http.Request) {

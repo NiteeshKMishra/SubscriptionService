@@ -1,24 +1,22 @@
 package session
 
 import (
-	"net/http"
+	"encoding/gob"
 	"os"
 	"time"
 
+	"github.com/NiteeshKMishra/SubscriptionService/cmd/database"
 	"github.com/alexedwards/scs/redisstore"
 	"github.com/alexedwards/scs/v2"
 	"github.com/gomodule/redigo/redis"
 )
 
 func InitSession() *scs.SessionManager {
+	gob.Register(database.User{})
+
 	session := scs.New()
 	session.Store = redisstore.New(initRedis())
 	session.Lifetime = 24 * time.Hour
-	session.Cookie = scs.SessionCookie{
-		Persist:  true,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
-	}
 
 	return session
 }

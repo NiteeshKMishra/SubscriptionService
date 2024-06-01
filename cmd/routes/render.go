@@ -14,6 +14,7 @@ const TDWarning = "warning"
 const TDFlash = "flash"
 
 const UserInfoId = "user_id"
+const UserInfo = "user"
 
 type TemplateData struct {
 	Data          map[string]any
@@ -47,7 +48,8 @@ func render(app *app.App, w http.ResponseWriter, r *http.Request, tName string, 
 		return
 	}
 
-	err = tmpl.Execute(w, addDefaultTemplateData(app, r, tData))
+	tData = addDefaultTemplateData(app, r, tData)
+	err = tmpl.Execute(w, tData)
 	if err != nil {
 		app.ErrorLog.Printf("Error in executing template files: %s\n", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
