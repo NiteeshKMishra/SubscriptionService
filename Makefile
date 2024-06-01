@@ -1,6 +1,4 @@
 BINARY_NAME=subscriptionservice
-DSN="host=localhost port=5432 user=postgres password=password dbname=subscriptionservice sslmode=disable timezone=UTC connect_timeout=5"
-REDIS="127.0.0.1:6379"
 
 ## build: Build binary
 build:
@@ -11,7 +9,7 @@ build:
 ## run: builds and runs the application
 run: build
 	@echo "Starting..."
-	@env DSN=${DSN} REDIS=${REDIS} ./${BINARY_NAME} &
+	./${BINARY_NAME} &
 	@echo "Started!"
 
 ## clean: runs go clean and deletes binaries

@@ -24,7 +24,7 @@ func InitSession() *scs.SessionManager {
 }
 
 func initRedis() *redis.Pool {
-	connString := os.Getenv("REDIS")
+	connString := os.Getenv("REDIS_HOST")
 	redisPool := &redis.Pool{
 		MaxIdle: 10,
 		Dial: func() (redis.Conn, error) {

@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"github.com/alexedwards/scs/v2"
+
+	"github.com/NiteeshKMishra/SubscriptionService/cmd/database"
 )
 
 type App struct {
@@ -15,4 +17,5 @@ type App struct {
 	ErrorLog *log.Logger
 	WG       *sync.WaitGroup
 	MU       *sync.Mutex
+	Models   database.Models
 }

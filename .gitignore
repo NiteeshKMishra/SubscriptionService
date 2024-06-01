@@ -11,6 +11,9 @@
 # Build
 subscriptionservice
 
+#Secrets
+secrets.env
+
 # Docker
 db-data
 

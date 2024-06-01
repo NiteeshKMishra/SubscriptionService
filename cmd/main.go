@@ -9,6 +9,8 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/joho/godotenv"
+
 	"github.com/NiteeshKMishra/SubscriptionService/cmd/app"
 	"github.com/NiteeshKMishra/SubscriptionService/cmd/database"
 	"github.com/NiteeshKMishra/SubscriptionService/cmd/routes"
@@ -16,9 +18,15 @@ import (
 )
 
 const PORT = 8080
+const SECRET_FILE = "secrets.env"
 
 func main() {
 	log.Println("Welcome to subscription service")
+
+	err := readSecrets()
+	if err != nil {
+		log.Panicf("error in parsing secrets %s", err.Error())
+	}
 
 	mutex := &sync.Mutex{}
 	db := database.InitDB(mutex)
@@ -29,6 +37,7 @@ func main() {
 		ErrorLog: log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
 		WG:       &sync.WaitGroup{},
 		MU:       mutex,
+		Models:   database.New(db),
 	}
 
 	srv := &http.Server{
@@ -38,10 +47,40 @@ func main() {
 
 	go listenForShutdown(&app)
 	app.InfoLog.Printf("Starting web server on port %d\n", PORT)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		log.Panic(err)
 	}
+}
+
+func readSecrets() error {
+	requiredSecrets := []string{
+		"DB_DSN",
+		"REDIS_HOST",
+		"PLANS",
+		"ADMIN_EMAIL",
+		"ADMIN_PASSWORD",
+	}
+	file, err := os.Stat(SECRET_FILE)
+	if err != nil && !os.IsNotExist(err) {
+		log.Printf("os.stat failed with Error %s", err.Error())
+		return err
+	}
+
+	if err == nil && file.Size() > 0 {
+		err := godotenv.Load(SECRET_FILE)
+		if err != nil {
+			log.Panicf("unable to parse secrets with error %s", err.Error())
+		}
+	}
+
+	for _, secret := range requiredSecrets {
+		if os.Getenv(secret) == "" {
+			log.Panicf("required secret %s not present", secret)
+		}
+	}
+
+	return nil
 }
 
 func listenForShutdown(app *app.App) {
