@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/NiteeshKMishra/SubscriptionService/cmd/app"
+	"github.com/NiteeshKMishra/SubscriptionService/cmd/emailer"
 )
 
 func Health(app *app.App, w http.ResponseWriter, r *http.Request) {
@@ -53,6 +54,12 @@ func PostLoginPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 
 	if !valid {
 		app.ErrorLog.Println("password is not valid")
+		msg := emailer.Message{
+			To:      email,
+			Subject: "Failed to log in",
+			Data:    "password is not valid",
+		}
+		app.SendEmail(msg)
 
 		app.Session.Put(r.Context(), TDError, "invalid credentials")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -64,6 +71,12 @@ func PostLoginPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 	app.Session.Put(r.Context(), TDFlash, "Logged In")
 
 	app.InfoLog.Printf("%s logged in successfully", user.ID)
+	msg := emailer.Message{
+		To:      email,
+		Subject: "Login success",
+		Data:    "Successfully log in",
+	}
+	app.SendEmail(msg)
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
