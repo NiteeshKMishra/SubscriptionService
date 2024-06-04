@@ -214,7 +214,7 @@ func PostRegisterPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 
 	app.SendEmail(msg)
 
-	app.Session.Put(r.Context(), "flash", "Check your email to activate your account")
+	app.Session.Put(r.Context(), TDFlash, "Check your email to activate your account")
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
@@ -227,7 +227,7 @@ func ActivateAccount(app *app.App, w http.ResponseWriter, r *http.Request) {
 		err := errors.New("invalid email token")
 		app.ErrorLog.Printf("unable to activate: %s", err.Error())
 
-		app.Session.Put(r.Context(), "error", err.Error())
+		app.Session.Put(r.Context(), TDError, err.Error())
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -237,7 +237,7 @@ func ActivateAccount(app *app.App, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.ErrorLog.Printf("unable to activate: %s", err.Error())
 
-		app.Session.Put(r.Context(), "error", "no user found")
+		app.Session.Put(r.Context(), TDError, "no user found")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -247,11 +247,125 @@ func ActivateAccount(app *app.App, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.ErrorLog.Printf("unable to activate: %s", err.Error())
 
-		app.Session.Put(r.Context(), "error", "unable to update user")
+		app.Session.Put(r.Context(), TDError, "unable to update user")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
-	app.Session.Put(r.Context(), "flash", "Account activated. You can now log in.")
+	app.Session.Put(r.Context(), TDFlash, "Account activated. You can now log in.")
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+func ForgotPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+	render(app, w, r, "forgot-password.page.gohtml", nil)
+}
+
+func PostForgotPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
+
+		app.Session.Put(r.Context(), TDError, "please try again")
+		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+		return
+	}
+
+	email := r.Form.Get("email")
+
+	exists := app.Models.User.UserExists(email)
+	if !exists {
+		app.ErrorLog.Println("unable to reset password: user does not exists")
+
+		app.Session.Put(r.Context(), TDError, "invalid email")
+		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+		return
+	}
+
+	url := fmt.Sprintf("%s/reset-password?email=%s", os.Getenv("BASE_URL"), email)
+	signedURL := utils.GenerateTokenFromString(url)
+	app.InfoLog.Printf("signed url for %s is %s", email, signedURL)
+
+	msg := emailer.Message{
+		To:       email,
+		Subject:  "Reset your password",
+		Template: "reset-password-email",
+		Data:     template.HTML(signedURL),
+	}
+	app.SendEmail(msg)
+
+	app.Session.Put(r.Context(), TDFlash, "Check your email to reset password")
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+func ResetPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+	render(app, w, r, "reset-password.page.gohtml", nil)
+}
+
+func PostResetPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+	uri := r.RequestURI
+	appURL := fmt.Sprintf("%s%s", os.Getenv("BASE_URL"), uri)
+	app.InfoLog.Printf("app url received: %s", appURL)
+
+	okay := utils.VerifyToken(appURL)
+
+	if !okay {
+		err := errors.New("invalid email token")
+		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
+
+		app.Session.Put(r.Context(), TDError, err.Error())
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
+
+		app.Session.Put(r.Context(), TDError, "please try again")
+		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+		return
+	}
+
+	password := r.Form.Get("password")
+	verifiedPassword := r.Form.Get("verify-password")
+
+	if !utils.ValidatePassword(password) {
+		err := errors.New("password is invalid")
+		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
+
+		app.Session.Put(r.Context(), TDError, err.Error())
+		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+		return
+	}
+
+	if !strings.EqualFold(password, verifiedPassword) {
+		err := errors.New("password does not match")
+		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
+
+		app.Session.Put(r.Context(), TDError, err.Error())
+		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+		return
+	}
+
+	email := r.URL.Query().Get("email")
+	user, err := app.Models.User.GetByEmail(email)
+	if err != nil {
+		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
+
+		app.Session.Put(r.Context(), TDError, "no user found")
+		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+		return
+	}
+
+	err = user.ResetPassword(password)
+	if err != nil {
+		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
+
+		app.Session.Put(r.Context(), TDError, "no user found")
+		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
+		return
+	}
+
+	app.Session.Put(r.Context(), TDFlash, "Password reset. You can now log in.")
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

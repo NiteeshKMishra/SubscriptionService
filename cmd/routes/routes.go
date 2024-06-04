@@ -37,6 +37,18 @@ func InitRoutes(app *app.App) http.Handler {
 	mux.Get("/logout", func(w http.ResponseWriter, r *http.Request) {
 		LogoutPage(app, w, r)
 	})
+	mux.Get("/forgot-password", func(w http.ResponseWriter, r *http.Request) {
+		ForgotPasswordPage(app, w, r)
+	})
+	mux.Post("/forgot-password", func(w http.ResponseWriter, r *http.Request) {
+		PostForgotPasswordPage(app, w, r)
+	})
+	mux.Get("/reset-password", func(w http.ResponseWriter, r *http.Request) {
+		ResetPasswordPage(app, w, r)
+	})
+	mux.Post("/reset-password", func(w http.ResponseWriter, r *http.Request) {
+		PostResetPasswordPage(app, w, r)
+	})
 	mux.Get("/activate", func(w http.ResponseWriter, r *http.Request) {
 		ActivateAccount(app, w, r)
 	})
