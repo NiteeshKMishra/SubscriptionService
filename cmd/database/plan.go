@@ -73,6 +73,7 @@ func (p *Plan) GetOne(id string) (*Plan, error) {
 	if err != nil {
 		return nil, err
 	}
+	plan.PlanAmountFormatted = plan.AmountForDisplay()
 
 	return &plan, nil
 }

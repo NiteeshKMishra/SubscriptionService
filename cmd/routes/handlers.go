@@ -26,7 +26,7 @@ func LoginPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 	render(app, w, r, "login.page.gohtml", nil)
 }
 
-func PostLoginPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+func LoginHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 	app.Session.RenewToken(r.Context())
 
 	err := r.ParseForm()
@@ -107,21 +107,21 @@ func PostLoginPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func LogoutPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+func LogoutHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 	userId := app.Session.PopString(r.Context(), UserInfoId)
 	app.Session.Destroy(r.Context())
 	app.Session.RenewToken(r.Context())
 
 	app.InfoLog.Printf("%s logged out successfully", userId)
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func RegisterPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 	render(app, w, r, "register.page.gohtml", nil)
 }
 
-func PostRegisterPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+func RegisterHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		app.ErrorLog.Printf("unable to register: %s", err.Error())
@@ -218,7 +218,7 @@ func PostRegisterPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
-func ActivateAccount(app *app.App, w http.ResponseWriter, r *http.Request) {
+func ActivateAccountHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 	uri := r.RequestURI
 	appURL := fmt.Sprintf("%s%s", os.Getenv("BASE_URL"), uri)
 	okay := utils.VerifyToken(appURL)
@@ -260,7 +260,7 @@ func ForgotPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 	render(app, w, r, "forgot-password.page.gohtml", nil)
 }
 
-func PostForgotPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+func ForgotPasswordHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
@@ -301,7 +301,7 @@ func ResetPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 	render(app, w, r, "reset-password.page.gohtml", nil)
 }
 
-func PostResetPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+func ResetPasswordHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 	uri := r.RequestURI
 	appURL := fmt.Sprintf("%s%s", os.Getenv("BASE_URL"), uri)
 	app.InfoLog.Printf("app url received: %s", appURL)
@@ -368,4 +368,75 @@ func PostResetPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request)
 
 	app.Session.Put(r.Context(), TDFlash, "Password reset. You can now log in.")
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+func PlansPage(app *app.App, w http.ResponseWriter, r *http.Request) {
+	plans, err := app.Models.Plan.GetAll()
+	if err != nil {
+		app.ErrorLog.Printf("unable to chose subscription: %s", err.Error())
+		app.Session.Put(r.Context(), TDError, "something went wrong")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+
+		return
+	}
+
+	dataMap := make(map[string]any)
+	dataMap["plans"] = plans
+
+	render(app, w, r, "plans.page.gohtml", &TemplateData{
+		Data: dataMap,
+	})
+}
+
+func SubscriptionHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
+	planID := r.URL.Query().Get("id")
+
+	plan, err := app.Models.Plan.GetOne(planID)
+	if err != nil {
+		app.ErrorLog.Printf("unable to subscribe: %s", err.Error())
+		app.Session.Put(r.Context(), TDError, "no plans found")
+		http.Redirect(w, r, "/user/plans", http.StatusSeeOther)
+
+		return
+	}
+
+	user, ok := app.Session.Get(r.Context(), UserInfo).(database.User)
+	if !ok {
+		err := errors.New("no user found. please log in")
+		app.ErrorLog.Printf("unable to subscribe: %s", err.Error())
+		app.Session.Put(r.Context(), TDError, err.Error())
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+
+		return
+	}
+
+	app.WG.Add(1)
+	go utils.SendInvoice(app, user, plan)
+
+	app.WG.Add(1)
+	go utils.SendManual(app, user, plan)
+
+	err = app.Models.Plan.SubscribeUserToPlan(user.ID, plan.ID)
+	if err != nil {
+		app.ErrorLog.Printf("unable to subscribe: %s", err.Error())
+		app.Session.Put(r.Context(), TDError, "something went wrong. please try again")
+		http.Redirect(w, r, "/user/plans", http.StatusSeeOther)
+
+		return
+	}
+
+	updatedUser, err := app.Models.User.GetOne(user.ID)
+	if err != nil {
+		err := errors.New("error getting user from database")
+		app.ErrorLog.Printf("unable to subscribe: %s", err.Error())
+		app.Session.Put(r.Context(), TDError, err.Error())
+		http.Redirect(w, r, "/user/plans", http.StatusSeeOther)
+
+		return
+	}
+
+	app.Session.Put(r.Context(), UserInfo, updatedUser)
+
+	app.Session.Put(r.Context(), TDFlash, "Subscribed!")
+	http.Redirect(w, r, "/user/plans", http.StatusSeeOther)
 }

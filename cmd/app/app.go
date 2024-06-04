@@ -21,6 +21,17 @@ func (app *App) ListenForMail() {
 	}
 }
 
+func (app *App) ListenForErrors() {
+	for {
+		select {
+		case err := <-app.ErrorChan:
+			app.ErrorLog.Printf("error sending invoices: %s", err.Error())
+		case <-app.ErrorChanDone:
+			return
+		}
+	}
+}
+
 func (app *App) SendEmail(msg emailer.Message) {
 	app.WG.Add(1)
 	app.Mailer.MailerChan <- msg
@@ -42,9 +53,13 @@ func (app *App) shutDown() {
 	}
 
 	app.Mailer.DoneChan <- true
+	app.ErrorChanDone <- true
+
 	close(app.Mailer.MailerChan)
 	close(app.Mailer.ErrorChan)
 	close(app.Mailer.DoneChan)
+	close(app.ErrorChan)
+	close(app.ErrorChanDone)
 
 	app.InfoLog.Println("Application shutdown")
 }

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/NiteeshKMishra/SubscriptionService/cmd/app"
+	"github.com/NiteeshKMishra/SubscriptionService/cmd/constants"
 	"github.com/NiteeshKMishra/SubscriptionService/cmd/database"
-	"github.com/NiteeshKMishra/SubscriptionService/cmd/utils"
 )
 
 const TDError = "error"
@@ -20,14 +20,14 @@ const UserInfo = "user"
 
 func render(app *app.App, w http.ResponseWriter, r *http.Request, tName string, tData *TemplateData) {
 	partials := []string{
-		fmt.Sprintf("%s/base.layout.gohtml", utils.PathToTemplates),
-		fmt.Sprintf("%s/header.partial.gohtml", utils.PathToTemplates),
-		fmt.Sprintf("%s/alerts.partial.gohtml", utils.PathToTemplates),
-		fmt.Sprintf("%s/navbar.partial.gohtml", utils.PathToTemplates),
-		fmt.Sprintf("%s/footer.partial.gohtml", utils.PathToTemplates),
+		fmt.Sprintf("%s/base.layout.gohtml", constants.PathToTemplates),
+		fmt.Sprintf("%s/header.partial.gohtml", constants.PathToTemplates),
+		fmt.Sprintf("%s/alerts.partial.gohtml", constants.PathToTemplates),
+		fmt.Sprintf("%s/navbar.partial.gohtml", constants.PathToTemplates),
+		fmt.Sprintf("%s/footer.partial.gohtml", constants.PathToTemplates),
 	}
 
-	templates := []string{fmt.Sprintf("%s/%s", utils.PathToTemplates, tName)}
+	templates := []string{fmt.Sprintf("%s/%s", constants.PathToTemplates, tName)}
 	templates = append(templates, partials...)
 
 	if tData == nil {
@@ -58,7 +58,6 @@ func addDefaultTemplateData(app *app.App, r *http.Request, td *TemplateData) *Te
 	if td.Data == nil {
 		td.Data = make(map[string]any)
 	}
-	td.Now = time.Now()
 	if isAuthenticated(app, r) {
 		td.Authenticated = true
 		user, ok := app.Session.Get(r.Context(), UserInfo).(database.User)
@@ -69,6 +68,7 @@ func addDefaultTemplateData(app *app.App, r *http.Request, td *TemplateData) *Te
 		}
 	}
 
+	td.Now = time.Now()
 	return td
 }
 

@@ -31,17 +31,20 @@ func main() {
 	wt := &sync.WaitGroup{}
 	db := database.InitDB(mutex)
 	app := app.App{
-		DB:       db,
-		Session:  session.InitSession(),
-		InfoLog:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
-		ErrorLog: log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
-		WG:       wt,
-		MU:       mutex,
-		Models:   database.New(db),
-		Mailer:   emailer.NewMailer(wt),
+		DB:            db,
+		Session:       session.InitSession(),
+		InfoLog:       log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
+		ErrorLog:      log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
+		WG:            wt,
+		MU:            mutex,
+		Models:        database.New(db),
+		Mailer:        emailer.NewMailer(wt),
+		ErrorChan:     make(chan error),
+		ErrorChanDone: make(chan bool),
 	}
 
 	go app.ListenForMail()
+	go app.ListenForErrors()
 	go app.ListenForShutdown()
 
 	srv := &http.Server{
@@ -52,7 +55,7 @@ func main() {
 	app.InfoLog.Printf("Starting web server on port %d\n", PORT)
 	err = srv.ListenAndServe()
 	if err != nil {
-		log.Panic(err)
+		log.Panicf("Error starting app: %s", err.Error())
 	}
 }
 

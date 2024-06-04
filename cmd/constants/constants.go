@@ -1,8 +1,13 @@
-package utils
+package constants
 
-import "path"
+import (
+	"io/fs"
+	"path"
+)
 
 var PathToTemplates = path.Join("./", "cmd", "templates")
+var PathToAssets = path.Join("./", "assets")
+var DirPermission fs.FileMode = 0777
 
 const MinIdentityLen = 8
 const MaxIdentityLen = 32
