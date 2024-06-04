@@ -11,6 +11,8 @@ import (
 
 	"github.com/vanng822/go-premailer/premailer"
 	mail "github.com/xhit/go-simple-mail/v2"
+
+	"github.com/NiteeshKMishra/SubscriptionService/cmd/utils"
 )
 
 func NewMailer(wt *sync.WaitGroup) Mail {
@@ -86,8 +88,8 @@ func (m *Mail) SendMail(msg Message, errorChan chan error) {
 	email := mail.NewMSG()
 	email.SetFrom(msg.From).AddTo(msg.To).SetSubject(msg.Subject)
 
-	email.SetBody(mail.TextPlain, plainMessage)
-	email.AddAlternative(mail.TextHTML, formattedMessage)
+	email.SetBody(mail.TextHTML, formattedMessage)
+	email.AddAlternative(mail.TextPlain, plainMessage)
 
 	if len(msg.Attachments) > 0 {
 		for _, x := range msg.Attachments {
@@ -102,7 +104,7 @@ func (m *Mail) SendMail(msg Message, errorChan chan error) {
 }
 
 func (m *Mail) buildHTMLMessage(msg Message) (string, error) {
-	templateToRender := fmt.Sprintf("./cmd/templates/%s.html.gohtml", msg.Template)
+	templateToRender := fmt.Sprintf("%s/%s.html.gohtml", utils.PathToTemplates, msg.Template)
 
 	t, err := template.New("email-html").ParseFiles(templateToRender)
 	if err != nil {
@@ -124,7 +126,7 @@ func (m *Mail) buildHTMLMessage(msg Message) (string, error) {
 }
 
 func (m *Mail) buildPlainTextMessage(msg Message) (string, error) {
-	templateToRender := fmt.Sprintf("./cmd/templates/%s.plain.gohtml", msg.Template)
+	templateToRender := fmt.Sprintf("%s/%s.plain.gohtml", utils.PathToTemplates, msg.Template)
 
 	t, err := template.New("email-plain").ParseFiles(templateToRender)
 	if err != nil {

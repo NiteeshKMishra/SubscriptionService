@@ -2,15 +2,12 @@ package routes
 
 import (
 	"net/http"
-	"path"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/NiteeshKMishra/SubscriptionService/cmd/app"
 )
-
-var PathToTemplates = path.Join("./", "cmd", "templates")
 
 func InitRoutes(app *app.App) http.Handler {
 	mux := chi.NewRouter()

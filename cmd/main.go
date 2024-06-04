@@ -69,6 +69,8 @@ func readSecrets() error {
 		"MAIL_ENCRYPTION",
 		"MAIL_FROM",
 		"MAIL_ADDRESS",
+		"SIGN_SECRET",
+		"BASE_URL",
 	}
 	file, err := os.Stat(SECRET_FILE)
 	if err != nil && !os.IsNotExist(err) {

@@ -74,6 +74,26 @@ func (u *User) GetAll() ([]*User, error) {
 	return users, nil
 }
 
+func (u *User) UserExists(email string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+	defer cancel()
+
+	var exists bool
+	query := "select count(id) = 1 from users where email = $1"
+
+	row := db.QueryRowContext(ctx, query, email)
+
+	err := row.Scan(
+		&exists,
+	)
+
+	if err != nil {
+		return false
+	}
+
+	return exists
+}
+
 func (u *User) GetByEmail(email string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
@@ -245,11 +265,11 @@ func (u *User) DeleteByID(id string) error {
 	return nil
 }
 
-func (u *User) Insert(user User) (string, error) {
+func (u *User) Insert() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 	defer cancel()
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), 12)
 	if err != nil {
 		return "", err
 	}
@@ -259,11 +279,11 @@ func (u *User) Insert(user User) (string, error) {
 		values ($1, $2, $3, $4, $5, $6, $7) returning id`
 
 	err = db.QueryRowContext(ctx, stmt,
-		user.Email,
-		user.FirstName,
-		user.LastName,
+		u.Email,
+		u.FirstName,
+		u.LastName,
 		hashedPassword,
-		user.Active,
+		u.Active,
 		time.Now(),
 		time.Now(),
 	).Scan(&newID)

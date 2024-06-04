@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/NiteeshKMishra/SubscriptionService/cmd/app"
+	"github.com/NiteeshKMishra/SubscriptionService/cmd/database"
+	"github.com/NiteeshKMishra/SubscriptionService/cmd/utils"
 )
 
 const TDError = "error"
@@ -16,25 +18,16 @@ const TDFlash = "flash"
 const UserInfoId = "user_id"
 const UserInfo = "user"
 
-type TemplateData struct {
-	Data          map[string]any
-	Flash         string
-	Warning       string
-	Error         string
-	Authenticated bool
-	Now           time.Time
-}
-
 func render(app *app.App, w http.ResponseWriter, r *http.Request, tName string, tData *TemplateData) {
 	partials := []string{
-		fmt.Sprintf("%s/base.layout.gohtml", PathToTemplates),
-		fmt.Sprintf("%s/header.partial.gohtml", PathToTemplates),
-		fmt.Sprintf("%s/alerts.partial.gohtml", PathToTemplates),
-		fmt.Sprintf("%s/navbar.partial.gohtml", PathToTemplates),
-		fmt.Sprintf("%s/footer.partial.gohtml", PathToTemplates),
+		fmt.Sprintf("%s/base.layout.gohtml", utils.PathToTemplates),
+		fmt.Sprintf("%s/header.partial.gohtml", utils.PathToTemplates),
+		fmt.Sprintf("%s/alerts.partial.gohtml", utils.PathToTemplates),
+		fmt.Sprintf("%s/navbar.partial.gohtml", utils.PathToTemplates),
+		fmt.Sprintf("%s/footer.partial.gohtml", utils.PathToTemplates),
 	}
 
-	templates := []string{fmt.Sprintf("%s/%s", PathToTemplates, tName)}
+	templates := []string{fmt.Sprintf("%s/%s", utils.PathToTemplates, tName)}
 	templates = append(templates, partials...)
 
 	if tData == nil {
@@ -66,7 +59,15 @@ func addDefaultTemplateData(app *app.App, r *http.Request, td *TemplateData) *Te
 		td.Data = make(map[string]any)
 	}
 	td.Now = time.Now()
-	td.Authenticated = isAuthenticated(app, r)
+	if isAuthenticated(app, r) {
+		td.Authenticated = true
+		user, ok := app.Session.Get(r.Context(), UserInfo).(database.User)
+		if !ok {
+			app.ErrorLog.Println("can't get user from session")
+		} else {
+			td.User = &user
+		}
+	}
 
 	return td
 }
