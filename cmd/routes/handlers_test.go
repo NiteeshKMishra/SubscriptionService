@@ -133,6 +133,8 @@ func TestSubscriptionHandler(t *testing.T) {
 	})
 	handler.ServeHTTP(rr, req)
 
+	testApp.WG.Wait()
+
 	if rr.Code != http.StatusSeeOther {
 		t.Errorf("expected status code of statusseeother, but got %d", rr.Code)
 	}

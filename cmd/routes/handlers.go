@@ -181,7 +181,7 @@ func RegisterHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 		Active:    false,
 	}
 
-	exists := user.UserExists(email)
+	exists := app.Models.User.UserExists(email)
 	if exists {
 		err := errors.New("user already exists. please login")
 		app.ErrorLog.Printf("unable to register: %s", err.Error())
@@ -191,7 +191,7 @@ func RegisterHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.ID, err = user.Insert()
+	user.ID, err = app.Models.User.Insert(&user)
 	if err != nil {
 		app.ErrorLog.Printf("unable to register: %s", err.Error())
 
@@ -243,7 +243,7 @@ func ActivateAccountHandler(app *app.App, w http.ResponseWriter, r *http.Request
 	}
 
 	user.Active = true
-	err = user.Update()
+	err = app.Models.User.Update(user)
 	if err != nil {
 		app.ErrorLog.Printf("unable to activate: %s", err.Error())
 
@@ -348,16 +348,17 @@ func ResetPasswordHandler(app *app.App, w http.ResponseWriter, r *http.Request) 
 	}
 
 	email := r.URL.Query().Get("email")
-	user, err := app.Models.User.GetByEmail(email)
-	if err != nil {
+	exists := app.Models.User.UserExists(email)
+	if !exists {
+		err := errors.New("no users found")
 		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
 
-		app.Session.Put(r.Context(), TDError, "no user found")
+		app.Session.Put(r.Context(), TDError, err.Error())
 		http.Redirect(w, r, "/forgot-password", http.StatusSeeOther)
 		return
 	}
 
-	err = user.ResetPassword(password)
+	err = app.Models.User.ResetPassword(email, password)
 	if err != nil {
 		app.ErrorLog.Printf("unable to reset password: %s", err.Error())
 

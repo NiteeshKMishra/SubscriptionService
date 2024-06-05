@@ -105,11 +105,11 @@ func (u *UserTest) GetOne(id string) (*User, error) {
 	return &user, nil
 }
 
-func (u *UserTest) Update() error {
+func (u *UserTest) Update(user *User) error {
 	return nil
 }
 
-func (u *UserTest) Delete() error {
+func (u *UserTest) Delete(user *User) error {
 	return nil
 }
 
@@ -117,11 +117,11 @@ func (u *UserTest) DeleteByID(id string) error {
 	return nil
 }
 
-func (u *UserTest) Insert() (string, error) {
+func (u *UserTest) Insert(user *User) (string, error) {
 	return "00000000-0000-0000-0000-000000000002", nil
 }
 
-func (u *UserTest) ResetPassword(password string) error {
+func (u *UserTest) ResetPassword(email string, password string) error {
 	return nil
 }
 

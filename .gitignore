@@ -13,6 +13,7 @@ subscriptionservice
 
 #Secrets
 secrets.env
+*manual.pdf
 
 # Docker
 db-data

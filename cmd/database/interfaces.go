@@ -9,11 +9,11 @@ type UserInterface interface {
 	UserExists(email string) bool
 	GetByEmail(email string) (*User, error)
 	GetOne(id string) (*User, error)
-	Update() error
-	Delete() error
+	Update(user *User) error
+	Delete(user *User) error
 	DeleteByID(id string) error
-	Insert() (string, error)
-	ResetPassword(password string) error
+	Insert(user *User) (string, error)
+	ResetPassword(email string, password string) error
 	PasswordMatches(email string, password string) (bool, error)
 }
 
