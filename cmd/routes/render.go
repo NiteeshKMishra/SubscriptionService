@@ -18,7 +18,7 @@ const TDFlash = "flash"
 const UserInfoId = "user_id"
 const UserInfo = "user"
 
-func render(app *app.App, w http.ResponseWriter, r *http.Request, tName string, tData *TemplateData) {
+func Render(app *app.App, w http.ResponseWriter, r *http.Request, tName string, tData *TemplateData) {
 	partials := []string{
 		fmt.Sprintf("%s/base.layout.gohtml", constants.PathToTemplates),
 		fmt.Sprintf("%s/header.partial.gohtml", constants.PathToTemplates),
@@ -41,7 +41,7 @@ func render(app *app.App, w http.ResponseWriter, r *http.Request, tName string, 
 		return
 	}
 
-	tData = addDefaultTemplateData(app, r, tData)
+	tData = AddDefaultTemplateData(app, r, tData)
 	err = tmpl.Execute(w, tData)
 	if err != nil {
 		app.ErrorLog.Printf("Error in executing template files: %s\n", err.Error())
@@ -50,7 +50,7 @@ func render(app *app.App, w http.ResponseWriter, r *http.Request, tName string, 
 	}
 }
 
-func addDefaultTemplateData(app *app.App, r *http.Request, td *TemplateData) *TemplateData {
+func AddDefaultTemplateData(app *app.App, r *http.Request, td *TemplateData) *TemplateData {
 	td.Flash = app.Session.PopString(r.Context(), TDFlash)
 	td.Warning = app.Session.PopString(r.Context(), TDWarning)
 	td.Error = app.Session.PopString(r.Context(), TDError)
@@ -58,7 +58,7 @@ func addDefaultTemplateData(app *app.App, r *http.Request, td *TemplateData) *Te
 	if td.Data == nil {
 		td.Data = make(map[string]any)
 	}
-	if isAuthenticated(app, r) {
+	if IsAuthenticated(app, r) {
 		td.Authenticated = true
 		user, ok := app.Session.Get(r.Context(), UserInfo).(database.User)
 		if !ok {
@@ -72,6 +72,6 @@ func addDefaultTemplateData(app *app.App, r *http.Request, td *TemplateData) *Te
 	return td
 }
 
-func isAuthenticated(app *app.App, r *http.Request) bool {
+func IsAuthenticated(app *app.App, r *http.Request) bool {
 	return app.Session.Exists(r.Context(), UserInfoId)
 }

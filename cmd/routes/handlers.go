@@ -19,11 +19,11 @@ func Health(app *app.App, w http.ResponseWriter, r *http.Request) {
 }
 
 func HomePage(app *app.App, w http.ResponseWriter, r *http.Request) {
-	render(app, w, r, "home.page.gohtml", nil)
+	Render(app, w, r, "home.page.gohtml", nil)
 }
 
 func LoginPage(app *app.App, w http.ResponseWriter, r *http.Request) {
-	render(app, w, r, "login.page.gohtml", nil)
+	Render(app, w, r, "login.page.gohtml", nil)
 }
 
 func LoginHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
@@ -49,7 +49,7 @@ func LoginHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	valid, err := user.PasswordMatches(password)
+	valid, err := app.Models.User.PasswordMatches(email, password)
 	if err != nil {
 		app.ErrorLog.Printf("unable to login: %s", err.Error())
 
@@ -104,7 +104,7 @@ func LoginHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 	}
 	app.SendEmail(msg)
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/user/plans", http.StatusSeeOther)
 }
 
 func LogoutHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
@@ -118,7 +118,7 @@ func LogoutHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
 }
 
 func RegisterPage(app *app.App, w http.ResponseWriter, r *http.Request) {
-	render(app, w, r, "register.page.gohtml", nil)
+	Render(app, w, r, "register.page.gohtml", nil)
 }
 
 func RegisterHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
@@ -257,7 +257,7 @@ func ActivateAccountHandler(app *app.App, w http.ResponseWriter, r *http.Request
 }
 
 func ForgotPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
-	render(app, w, r, "forgot-password.page.gohtml", nil)
+	Render(app, w, r, "forgot-password.page.gohtml", nil)
 }
 
 func ForgotPasswordHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
@@ -298,7 +298,7 @@ func ForgotPasswordHandler(app *app.App, w http.ResponseWriter, r *http.Request)
 }
 
 func ResetPasswordPage(app *app.App, w http.ResponseWriter, r *http.Request) {
-	render(app, w, r, "reset-password.page.gohtml", nil)
+	Render(app, w, r, "reset-password.page.gohtml", nil)
 }
 
 func ResetPasswordHandler(app *app.App, w http.ResponseWriter, r *http.Request) {
@@ -383,7 +383,7 @@ func PlansPage(app *app.App, w http.ResponseWriter, r *http.Request) {
 	dataMap := make(map[string]any)
 	dataMap["plans"] = plans
 
-	render(app, w, r, "plans.page.gohtml", &TemplateData{
+	Render(app, w, r, "plans.page.gohtml", &TemplateData{
 		Data: dataMap,
 	})
 }
